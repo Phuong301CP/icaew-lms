@@ -1,19 +1,33 @@
-# Handoff / next actions
+# ICAEW LMS handoff status
 
-Current GitHub account: `Phuong301CP`.
+Repository: `Phuong301CP/icaew-lms`
 
-Blocking item: the connected GitHub integration cannot create a new repository, and the account currently exposes no repositories. Create a repository named `icaew-lms`; then the migration package can be pushed directly through the connected GitHub integration.
+Production URL: `https://phuong301cp.github.io/icaew-lms/`
 
-After the repo exists:
+## Completed
 
-1. Upload all prepared repo files.
-2. Verify `main` branch.
-3. Enable GitHub Pages with GitHub Actions.
-4. Wait for first Pages workflow run and inspect logs if it fails.
-5. Set Supabase Auth Site URL and allowed redirect URLs to the Pages URL.
-6. Test login on desktop + iPhone.
-7. Test cloud progress sync.
-8. Test Admin CMS question publish.
-9. Test Lessons publish/read.
-10. Configure AI Import Edge Function provider secret and test image/PDF import.
-11. Keep Floot live until all above pass; then retire it.
+- GitHub repository created and writable
+- GitHub Pages enabled
+- automatic deployment from `main`
+- Supabase Auth redirected to GitHub Pages
+- core quiz and cloud sync migrated
+- 52 original Chapter 1 questions migrated to Supabase
+- database marked authoritative for migrated exercises
+- Admin CMS active
+- Lessons reader active
+- Gemini AI Import active
+- AI source-context mismatch protection active
+- content audit history active
+- content snapshots/backups active
+- non-destructive hide/show controls active
+- Edge Function source tracked in GitHub
+
+## Remaining before Floot retirement
+
+1. Final regression test on iPhone.
+2. Final regression test on iPad if it is part of normal use.
+3. Confirm progress created on one device appears on another.
+4. Confirm one real accounting AI import can be reviewed and published.
+5. Enable leaked-password protection in Supabase Auth if available.
+6. Keep Floot untouched until the checks above pass.
+7. Retire Floot only after GitHub Pages is confirmed as the sole canonical deployment.
