@@ -1,7 +1,7 @@
 import { ensureSession, restGet, restInsert, restPatch, uploadImportFile, callAiImport } from './common.js';
 
 const $ = s => document.querySelector(s);
-let subjects=[], chapters=[], exercises=[], questions=[], lessons=[], audits=[];
+let subjects=[], chapters=[], exercises=[], questions=[], lessons=[], audits=[], snapshots=[];
 let importedQuestions=[], importedLesson=null, importSourceId=null, importDraftId=null;
 
 function notice(text, kind='info'){const n=$('#notice');n.textContent=text;n.className='notice '+(kind==='info'?'':kind)}
@@ -11,10 +11,10 @@ function selected(sel){return $(sel)?.value||''}
 
 async function reload(){
   const data=await Promise.all([
-    restGet('subjects','select=*&order=sort_order.asc'),restGet('chapters','select=*&order=sort_order.asc'),restGet('exercises','select=*&order=sort_order.asc'),restGet('questions','select=*&order=sort_order.asc'),restGet('lessons','select=*&order=sort_order.asc'),restGet('content_audit_log','select=*&order=changed_at.desc&limit=30')
+    restGet('subjects','select=*&order=sort_order.asc'),restGet('chapters','select=*&order=sort_order.asc'),restGet('exercises','select=*&order=sort_order.asc'),restGet('questions','select=*&order=sort_order.asc'),restGet('lessons','select=*&order=sort_order.asc'),restGet('content_audit_log','select=*&order=changed_at.desc&limit=30'),restGet('content_snapshots','select=id,label,created_at,created_by&order=created_at.desc&limit=10')
   ]);
-  [subjects,chapters,exercises,questions,lessons,audits]=data;
-  renderStructure(); renderQuestions(); renderActivity(); notice('Đã tải dữ liệu quản trị từ Supabase.','ok');
+  [subjects,chapters,exercises,questions,lessons,audits,snapshots]=data;
+  renderStructure(); renderQuestions(); renderActivity(); renderSnapshotMeta(); notice('Đã tải dữ liệu quản trị từ Supabase.','ok');
 }
 function renderStructure(){
   const s=$('#subject'),c=$('#chapter'),e=$('#exercise'); const oldS=s.value,oldC=c.value,oldE=e.value;
@@ -25,8 +25,10 @@ function renderStructure(){
 }
 function renderQuestions(){const id=selected('#exercise');const list=$('#question-list');const qs=questions.filter(q=>q.exercise_id===id).sort((a,b)=>a.sort_order-b.sort_order);if(!id){list.className='empty';list.textContent='Chọn Exercise để xem question bank.';return}if(!qs.length){list.className='empty';list.textContent='Exercise này chưa có câu hỏi trong database.';return}list.className='';list.innerHTML=qs.map((q,i)=>`<article class="questionCard"><div class="meta"><span>Q${i+1}</span><span class="badge">${esc(q.question_type)}</span><span class="badge ${q.status==='published'?'published':'draft'}">${esc(q.status)}</span>${q.metadata?.legacy_migrated===true?'<span class="badge">legacy→DB</span>':''}</div><p>${esc(q.prompt)}</p><button class="statusBtn" data-qid="${q.id}" data-status="${q.status}">${q.status==='published'?'Chuyển về Draft':'Publish'}</button></article>`).join('')}
 function renderActivity(){const el=$('#audit-list');if(!el)return;if(!audits.length){el.innerHTML='<div class="empty">Chưa có thay đổi mới kể từ khi bật lịch sử.</div>';return}el.innerHTML=audits.map(a=>{const n=a.new_data||{},o=a.old_data||{};const label=n.title||n.prompt||o.title||o.prompt||a.record_id||'';const when=a.changed_at?new Date(a.changed_at).toLocaleString('vi-VN'):'';return `<div class="auditItem"><span class="auditAction">${esc(a.action)}</span><span class="auditTable">${esc(a.table_name)}</span><span class="auditLabel" title="${esc(label)}">${esc(label)}</span><span class="auditMeta">${esc(a.changed_email||'system')}<br>${esc(when)}</span></div>`}).join('')}
+function renderSnapshotMeta(){const el=$('#snapshot-meta');if(!el)return;const s=snapshots[0];if(!s){el.innerHTML='<span>Backup gần nhất</span><code>Chưa có</code>';return}const when=s.created_at?new Date(s.created_at).toLocaleString('vi-VN'):'';el.innerHTML=`<span>Backup gần nhất</span><code>${esc(s.label)} · ${esc(when)}</code>`}
 function parseAnswer(type,raw,opts){if(type==='single'){const n=Number(raw.trim());if(!Number.isInteger(n)||n<1||n>opts.length)throw new Error('Single: nhập số thứ tự đáp án đúng, ví dụ 3.');return n-1}if(type==='multiple'){const v=raw.split(',').map(x=>Number(x.trim()));if(!v.length||v.some(n=>!Number.isInteger(n)||n<1||n>opts.length))throw new Error('Multiple: dùng dạng 1,3.');return [...new Set(v.map(n=>n-1))].sort((a,b)=>a-b)}const v=raw.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean).map(x=>['true','t','đúng','dung'].includes(x)?true:['false','f','sai'].includes(x)?false:null);if(v.length!==opts.length||v.includes(null))throw new Error('T/F: dùng dạng true,false,true đủ số nhận định.');return v}
 
+$('#create-snapshot').addEventListener('click',async()=>{try{const session=await ensureSession();const now=new Date();const label='Manual content backup · '+now.toLocaleString('vi-VN');await restInsert('content_snapshots',{label,snapshot:{subjects,chapters,exercises,lessons,questions},schema_version:1,created_by:session.user.id});await reload();notice('Đã tạo backup nội dung trong Supabase.','ok')}catch(err){notice(err.message,'error')}});
 $('#subject').addEventListener('change',()=>{renderStructure();renderQuestions()});$('#chapter').addEventListener('change',()=>{const e=$('#exercise');const es=exercises.filter(x=>x.chapter_id===$('#chapter').value);e.innerHTML='<option value="">— Chọn exercise —</option>'+es.map(x=>`<option value="${x.id}">${esc(x.title)}</option>`).join('');e.value=es[0]?.id||'';renderQuestions()});$('#exercise').addEventListener('change',renderQuestions);$('#refresh').addEventListener('click',()=>reload().catch(e=>notice(e.message,'error')));
 $('#subject-form').addEventListener('submit',async e=>{e.preventDefault();const title=$('#subject-new').value.trim();if(!title)return;const base=slugify(title)||'subject';const id=subjects.some(x=>x.id===base)?base+'_'+Date.now().toString().slice(-5):base;await restInsert('subjects',{id,title,sort_order:subjects.length,is_active:true});$('#subject-new').value='';await reload();$('#subject').value=id;renderStructure()});
 $('#chapter-form').addEventListener('submit',async e=>{e.preventDefault();const title=$('#chapter-new').value.trim(),sid=selected('#subject');if(!title||!sid)return;const id=sid+'__'+(slugify(title)||'chapter')+'_'+Date.now().toString().slice(-4);await restInsert('chapters',{id,subject_id:sid,title,sort_order:chapters.filter(x=>x.subject_id===sid).length,is_active:true});$('#chapter-new').value='';await reload()});
