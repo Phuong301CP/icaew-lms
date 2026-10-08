@@ -24,10 +24,9 @@ Production URL: `https://phuong301cp.github.io/icaew-lms/`
 
 ## Remaining before Floot retirement
 
-1. Final regression test on iPhone.
-2. Final regression test on iPad if it is part of normal use.
-3. Confirm progress created on one device appears on another.
-4. Confirm one real accounting AI import can be reviewed and published.
-5. Enable leaked-password protection in Supabase Auth if available.
-6. Keep Floot untouched until the checks above pass.
-7. Retire Floot only after GitHub Pages is confirmed as the sole canonical deployment.
+1. [x] iPhone Diagnostics regression passed.
+2. [x] Cross-device Sync Probe matched between desktop and iPhone.
+3. [x] Cloud progress is visible on iPhone.
+4. [ ] Confirm one real accounting AI import can be reviewed and published end-to-end.
+5. [ ] Final iPad check if iPad is part of normal use.
+6. [ ] Retire Floot only after the remaining acceptance check(s) pass.
