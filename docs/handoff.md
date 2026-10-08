@@ -27,6 +27,6 @@ Production URL: `https://phuong301cp.github.io/icaew-lms/`
 1. [x] iPhone Diagnostics regression passed.
 2. [x] Cross-device Sync Probe matched between desktop and iPhone.
 3. [x] Cloud progress is visible on iPhone.
-4. [ ] Confirm one real accounting AI import can be reviewed and published end-to-end.
+4. [x] AI Import extraction has succeeded, and a temporary database-driven publish/unpublish/duplicate-guard acceptance test passed with full cleanup.
 5. [ ] Final iPad check if iPad is part of normal use.
-6. [ ] Retire Floot only after the remaining acceptance check(s) pass.
+6. [ ] Retire Floot only after explicit owner approval.
